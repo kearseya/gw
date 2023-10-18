@@ -5,29 +5,150 @@ on:
   pull_request:
 
 jobs:
-  mingw:
-    strategy:
-      fail-fast: false
-      matrix:
-        sys: [clang64, ucrt64]
-    name: ${{ matrix.sys }}
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
+  # mingw:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       sys: [clang64, ucrt64]
+  #   name: ${{ matrix.sys }}
+  #   runs-on: windows-latest
+  #   defaults:
+  #     run:
+  #       shell: msys2 {0}
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: msys2/setup-msys2@v2
+  #       with:
+  #         msystem: ${{ matrix.sys }}
+  #         update: true
+  #         install: make
+  #         pacboy: toolchain:p glfw:p skia:p htslib:p freeglut:p glew:p ncurses:p fontconfig:p dlfcn:p libpng:p
+  #     - name: build
+  #       run: |
+  #         make
+  #     - name: upload
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: mingw-${{ matrix.sys }}
+  #         path: ${{ github.workspace }}/*.exe
+
+  #  macos-intel:
+  #    runs-on: macos-12
+  #    steps:
+  #      - uses: actions/checkout@v3
+  #      - name: Install dependencies
+  #        run: |
+  #          brew install node graphicsmagick imagemagick
+  #          npm install --global create-dmg
+  #          
+  #      - name: build
+  #        run: |
+  #          git clone --depth 1 https://github.com/ebiggers/libdeflate.git
+  #          cd libdeflate && CFLAGS+=' -fPIC -O3 ' cmake -B build && CFLAGS+=' -fPIC -O3 ' cmake --build build
+  #          cp build/libdeflate.a ../lib && cp libdeflate.h ../include
+  #          cp build/libdeflate.a /usr/local/lib && cp libdeflate.h /usr/local/include && cd ../
+  #          
+  #          wget -O htslib.tar.bz2 https://github.com/samtools/htslib/releases/download/1.17/htslib-1.17.tar.bz2
+  #          tar -xvf htslib.tar.bz2
+  #          mv htslib-1.17 htslib && rm htslib.tar.bz2 && cd htslib
+  #          ./configure --enable-libcurl --enable-s3 --enable-lzma --enable-bz2 --with-libdeflate
+  #          make -j3
+  #          cp -rf htslib ../include && cp libhts.a ../lib && cd ../
+  #          
+  #          wget https://github.com/glfw/glfw/releases/download/3.3.8/glfw-3.3.8.bin.MACOS.zip
+  #          unzip glfw-3.3.8.bin.MACOS.zip
+  #          cp -rf glfw-3.3.8.bin.MACOS/include/* include
+  #          cp glfw-3.3.8.bin.MACOS/lib-x86_64/libglfw3.a lib
+  #          cp glfw-3.3.8.bin.MACOS/lib-x86_64/libglfw3.a lib/libglfw.a
+  #          
+  #          cp /usr/local/opt/fontconfig/lib/libfontconfig.a ./lib
+  #          
+  #          make prep
+  #          cp -rf ./lib/skia/third_party/externals/freetype/include/* ./include
+  #          ls
+  #          echo "--"
+  #          ls include
+  #          echo "--"
+  #          ls lib
+  #          echo "--"
+  #          CONDA_PREFIX="." make -j3
+  #          
+  #      - name: package
+  #        run: |
+  #          osacompile -o gw.app deps/gw_applescript_prog.scpt
+  #          cp deps/gw_droplet.icns gw.app/Contents/Resources/droplet.icns
+  #          cp gw gw.app/Contents/MacOS/gw_program
+  #          codesign --remove-signature ./gw.app
+  #          codesign --force --deep -s - gw.app -v
+  #          codesign --verify -vvvv gw.app
+  #          create-dmg 'gw.app' || true
+  #          ls
+  #          mv gw\ undefined.dmg gw-x64.dmg
+  #          
+  #      - name: upload
+  #        uses: actions/upload-artifact@v3
+  #        with:
+  #          name: macos-latest-intel
+  #          path: ${{ github.workspace }}/gw-x64.dmg
+
+  deb-package:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-      - uses: msys2/setup-msys2@v2
-        with:
-          msystem: ${{ matrix.sys }}
-          update: true
-          install: make
-          pacboy: toolchain:p glfw:p skia:p htslib:p freeglut:p glew:p ncurses:p fontconfig:p dlfcn:p libpng:p
-      - name: build
+      - name: Install dependencies
         run: |
-          make
+          apt install libgl1-mesa-dev libfontconfig-dev
+  
+    - name: build
+      run: |
+          git clone --depth 1 https://github.com/ebiggers/libdeflate.git
+          cd libdeflate && CFLAGS+=' -fPIC -O3 ' cmake -B build && CFLAGS+=' -fPIC -O3 ' cmake --build build
+          cp build/libdeflate.a ../lib && cp libdeflate.h ../include
+          cp build/libdeflate.a /usr/local/lib && cp libdeflate.h /usr/local/include && cd ../
+          
+          wget -O htslib.tar.bz2 https://github.com/samtools/htslib/releases/download/1.17/htslib-1.17.tar.bz2
+          tar -xvf htslib.tar.bz2
+          mv htslib-1.17 htslib && rm htslib.tar.bz2 && cd htslib
+          ./configure --enable-libcurl --enable-s3 --enable-lzma --enable-bz2 --with-libdeflate
+          make -j3
+          cp -rf htslib ../include && cp libhts.a ../lib && cd ../
+
+          sed -i '121 i \\t-mv gw usr/bin' Makefile
+
+          make prep
+          mkdir -p usr/bin # also can be done in makefile
+          mkdir -p usr/share/icons
+          mkdir -p usr/share/applications
+          cp include/gw_icon.png usr/share/icons/
+          cp deps/gw.desktop usr/share/applications/
+
+
+      - name: package
+        run: |
+          dh_make --single --createorig --email kcleal@cardiff.ac.uk
+          printf "usr/bin/gw\nusr/share/icons/gw_icon.png\nusr/share/applications/gw.desktop" > debian/install
+          printf "override_dh_shlibdeps:\n\tdh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info" >> debian/rules
+
+          dpkg-buildpackage
+  
       - name: upload
         uses: actions/upload-artifact@v3
         with:
-          name: mingw-${{ matrix.sys }}
-          path: ${{ github.workspace }}/*.exe
+          name: debian-package
+          path: ${{ github.workspace }}/gw.deb
+
+  add-windows-installer:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: copy file
+        run: |
+          cp deps/gw-install.vbs .
+  
+      - name: move file
+        uses: actions/checkout@v3
+        with:
+          name: windows-installer
+          path: ${{ github.workspace }}/gw-install.vbs
+
+          
+          

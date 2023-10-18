@@ -130,7 +130,7 @@ jobs:
 
       - name: package
         run: |
-          dh_make --single --createorig --packagename gw_0.8.2 --email kcleal@cardiff.ac.uk --yes --indep
+          dh_make --single --createorig --packagename gw_0.8.2 --email kcleal@cardiff.ac.uk --yes --native
           printf "usr/bin/gw\nusr/share/icons/gw_icon.png\nusr/share/applications/gw.desktop" > debian/install
           printf "override_dh_shlibdeps:\n\tdh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info" >> debian/rules
 

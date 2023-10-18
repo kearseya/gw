@@ -114,6 +114,8 @@ jobs:
           make -j3
           cp -rf htslib ../include && cp libhts.a ../lib && cd ../
 
+          cd ../
+
           sed -i '121 i \\t-mv gw usr/bin' Makefile
 
           make prep

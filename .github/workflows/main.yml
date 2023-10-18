@@ -31,7 +31,7 @@ jobs:
   #       with:
   #         name: mingw-${{ matrix.sys }}
   #         path: ${{ github.workspace }}/*.exe
-
+  
   #  macos-intel:
   #    runs-on: macos-12
   #    steps:
@@ -90,7 +90,7 @@ jobs:
   #        with:
   #          name: macos-latest-intel
   #          path: ${{ github.workspace }}/gw-x64.dmg
-
+  
   deb-package:
     runs-on: ubuntu-22.04
     steps:

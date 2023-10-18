@@ -97,7 +97,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Install dependencies
         run: |
-          apt install libgl1-mesa-dev libfontconfig-dev
+          sudo apt install libgl1-mesa-dev libfontconfig-dev
   
       - name: build
         run: |

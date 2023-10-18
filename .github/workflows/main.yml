@@ -141,7 +141,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: debian-package
-          path: /home/runner/work/gw/gw.deb
+          path: /home/runner/work/gw.deb
 
   #  add-windows-installer:
   #  runs-on: ubuntu-22.04
